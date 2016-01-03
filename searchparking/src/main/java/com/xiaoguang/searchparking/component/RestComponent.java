@@ -29,7 +29,6 @@ import java.util.Map;
 public class RestComponent extends Component {
     public static final String TAG = "RestComponent";
     private final Port parkingLotsDataOutput;
-//    private Set<ParkingLotsData.ParkingLot> existingParkingLots;
     private Map<Integer, ParkingLotsData.ParkingLot> existingParkingLots;
 
     public RestComponent(String name){
@@ -38,18 +37,15 @@ public class RestComponent extends Component {
         addInput(Constant.SEARCH_REQUEST, Cmd.SearchCmd.class, new Callback() {
             @Override
             public void onEvent(Object o, String s, Object o1) {
-                final Location location = ((Cmd.SearchCmd) o1).location;
                 final LatLng latLng = ((Cmd.SearchCmd) o1).latLng;
+                final int radius = ((Cmd.SearchCmd) o1).radius;
                 Executer.instance().execute(new Runnable() {
                     @Override
                     public void run() {
                         Geocoder geocoder = new Geocoder(CmpUtil.instance(null).getCtx());
                         try {
                             double lat, lng;
-                            if (location != null) {
-                                lat = location.getLatitude();
-                                lng = location.getLongitude();
-                            } else if (latLng != null) {
+                            if (latLng != null) {
                                 lat = latLng.latitude;
                                 lng = latLng.longitude;
                             } else {
@@ -58,8 +54,12 @@ public class RestComponent extends Component {
                             }
                             Address curAdd = geocoder.getFromLocation(lat, lng, 1).get(0);
                             YelpAPI yelpAPI = new YelpAPI();
-                            JSONArray queryRst = yelpAPI.queryAPI(new LatLng(lat, lng), curAdd.getLocality());
+                            JSONArray queryRst = yelpAPI.queryAPI(new LatLng(lat, lng), curAdd.getLocality(), radius);
                             List<ParkingLotsData.ParkingLot> parkingLots = new ArrayList<>();
+                            if(queryRst == null) {
+                                Log.e("QueryForParkingLot", "no business found");
+                                return;
+                            }
                             for (int i = 0; i < queryRst.length(); i++) {
                                 JSONObject obj = queryRst.getJSONObject(i);
                                 ParkingLotsData.ParkingLot lot = new ParkingLotsData.ParkingLot(obj);

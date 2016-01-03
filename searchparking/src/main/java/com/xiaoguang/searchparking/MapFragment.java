@@ -3,18 +3,23 @@ package com.xiaoguang.searchparking;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
+import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -26,6 +31,7 @@ import com.xiaoguang.searchparking.datalib.ParkingLotsData;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnCameraChangeListener {
 
+    private static final String TAG = "MapFragment";
     private MapView mMapView;
     private GoogleMap mGoogleMap;
     private Activity mActivity;
@@ -62,8 +68,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             public void onClick(View view) {
                 centerLocation = mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
                 if(centerLocation != null) {
-                    Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLocation));
                     centerLatLng= new LatLng(centerLocation.getLatitude(), centerLocation.getLongitude());
+                    Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLatLng, rangeOfScreen()));
                     mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(centerLatLng, 13));
                 }
             }
@@ -80,8 +86,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         mParkingLotsCallback = Dispatcher.instance().register(this, Constant.PARKINGLOT_DATA, new Callback() {
             @Override
             public void onEvent(Object o, String s, Object o1) {
-                final ParkingLotsData data = (ParkingLotsData)o1;
-                if(mGoogleMap != null) {
+                final ParkingLotsData data = (ParkingLotsData) o1;
+                if (mGoogleMap != null) {
                     mActivity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -95,9 +101,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         });
 
-        if(centerLocation != null) {
-            Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLocation));
-        }
+//        if(centerLocation != null) {
+//            Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLocation));
+//        }
     }
 
     @Override
@@ -109,8 +115,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
         centerLocation = mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
         if(centerLocation != null) {
-            Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLocation));
             centerLatLng= new LatLng(centerLocation.getLatitude(), centerLocation.getLongitude());
+            int searchRadius = rangeOfScreen();
+            Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLatLng, searchRadius));
+            Log.d(TAG, "PostSearchRsqOnReady: " + searchRadius);
             mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centerLatLng, 13));
         }
 
@@ -119,7 +127,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
         centerLatLng = cameraPosition.target;
-        Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLatLng));
+        int searchRadius = rangeOfScreen();
+        Dispatcher.instance().post(this, Constant.SEARCH_REQUEST, new Cmd.SearchCmd(centerLatLng, searchRadius));
+        Log.d(TAG, "PostSearchRsqOnChange: " + searchRadius);
     }
 
     @Override
@@ -157,6 +167,40 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void onDetach() {
         mActivity = null;
         super.onDetach();
+    }
+
+    private int rangeOfScreen(){
+        Display display = mActivity.getWindowManager().getDefaultDisplay();
+        Point rightBottom = new Point();
+        display.getSize(rightBottom);
+        Point leftUp = new Point(0,0);
+        if(mGoogleMap != null) {
+            Projection curProjection = mGoogleMap.getProjection();
+            LatLng leftUpLL = curProjection.fromScreenLocation(leftUp);
+            LatLng rightBottomLL = curProjection.fromScreenLocation(rightBottom);
+            return (int)distance(leftUpLL.latitude, rightBottomLL.latitude, leftUpLL.longitude, rightBottomLL.longitude, 0.0, 0.0);
+        }
+        return 0;
+    }
+
+    private double distance(double lat1, double lat2, double lon1,
+                                  double lon2, double el1, double el2) {
+
+        final int R = 6371; // Radius of the earth
+
+        Double latDistance = Math.toRadians(lat2 - lat1);
+        Double lonDistance = Math.toRadians(lon2 - lon1);
+        Double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c; // convert to meters
+
+        double height = el1 - el2;
+
+        distance = Math.pow(distance, 2) + Math.pow(height, 2);
+
+        return Math.sqrt(distance);
     }
 
 }

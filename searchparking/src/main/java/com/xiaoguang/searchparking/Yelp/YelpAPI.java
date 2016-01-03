@@ -127,15 +127,18 @@ public class YelpAPI {
     private String sendRequestAndGetResponse(OAuthRequest request) {
         this.service.signRequest(this.accessToken, request);
         Response response = request.send();
+        if(response == null || response.getCode() == 403) return "{}";
+        Log.d(TAG, response.getMessage());
         return response.getBody();
     }
 
-    public JSONArray queryAPI(LatLng latLng, String city) {
-        String searchResponseJSON = searchForBusinessesByLatLng(DEFAULT_TERM, latLng, city, 16);
+    public JSONArray queryAPI(LatLng latLng, String city, int radius) {
+        String searchResponseJSON = searchForBusinessesByLatLng(DEFAULT_TERM, latLng, city, radius);
         try {
             JSONObject response = new JSONObject(searchResponseJSON);
             return response.getJSONArray("businesses");
         } catch (JSONException e) {
+            Log.d(TAG, "Query: " + latLng.toString() + ", city: " + city + ", radius: " + radius );
             Log.d(TAG, "Error: could not parse JSON response:");
             Log.d(TAG,searchResponseJSON);
             e.printStackTrace();

@@ -9,15 +9,17 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class Cmd {
     public static class SearchCmd{
-        public final Location location;
+//        public final Location location;
         public final LatLng latLng;
-        public SearchCmd(Location location) {
-            this.location = location;
-            this.latLng = null;
-        }
-        public SearchCmd(LatLng latLng) {
+        public final int radius;
+//        public SearchCmd(Location location) {
+//            this.location = location;
+//            this.latLng = null;
+//        }
+        public SearchCmd(LatLng latLng, int r) {
             this.latLng = latLng;
-            this.location = null;
+            this.radius = r;
+//            this.location = null;
         }
     }
 }
