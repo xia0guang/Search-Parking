@@ -1,4 +1,4 @@
-package com.xiaoguang.searchparking.component;
+package com.xiaoguang.searchparking.util;
 
 import android.content.Context;
 
