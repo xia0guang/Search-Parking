@@ -2,7 +2,10 @@ package com.xiaoguang.searchparking;
 
 
 import android.app.Fragment;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +26,17 @@ import com.xiaoguang.searchparking.component.Constant;
 public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
 
     private static final String TAG = "SingleLotFragment";
+    private static final String POSITION = "Position";
+    private static final String NAME = "Name";
+    private static final String MILE_STRING = "MileString";
+    private static final String RATING = "Rating";
+    private static final String ADDRESS = "Address";
+    private static final String HOURS = "Hours";
+    private static final String CALL_NUMBER = "CallNumber";
+    private static final String URL = "URL";
+    private static final String LAT = "Lat";
+    private static final String LNG = "Lng";
+    private static final String ZOOM_RATIO = "ZoomRatio";
     private TextView nameView;
     private RatingBar ratingBarView;
     private TextView hoursView;
@@ -32,6 +46,7 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mGoogleMap;
     private TextView addressView;
     private TextView milesView;
+    private CardView cardView;
 
     public static SingleLotFragment newInstance(String name,
                                                 String mileStr,
@@ -42,19 +57,23 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
                                                 String yelpUrl,
                                                 double lat,
                                                 double lng,
-                                                float zoomRatio) {
+                                                float zoomRatio,
+                                                int position) {
         SingleLotFragment fragment = new SingleLotFragment();
+
         Bundle args = new Bundle();
-        args.putString(Constant.SINGLE_NAME, name);
-        args.putString(Constant.SINGLE_MILE_STRING, mileStr);
-        args.putFloat(Constant.SINGLE_RATING, rating);
-        args.putString(Constant.SINGLE_ADDRESS,address);
-        args.putString(Constant.SINGLE_HOURS, hours);
-        args.putString(Constant.SINGLE_CALL_NUMBER, callNumber);
-        args.putString(Constant.SINGLE_URL, yelpUrl);
-        args.putDouble(Constant.SINGLE_LAT, lat);
-        args.putDouble(Constant.SINGLE_LNG, lng);
-        args.putFloat(Constant.SINGLE_ZOOM_RATIO, zoomRatio);
+        args.putString(NAME, name);
+        args.putString(MILE_STRING, mileStr);
+        args.putFloat(RATING, rating);
+        args.putString(ADDRESS, address);
+        args.putString(HOURS, hours);
+        args.putString(CALL_NUMBER, callNumber);
+        args.putString(URL, yelpUrl);
+        args.putDouble(LAT, lat);
+        args.putDouble(LNG, lng);
+        args.putFloat(ZOOM_RATIO, zoomRatio);
+        args.putInt(POSITION, position);
+
         fragment.setArguments(args);
         return fragment;
     }
@@ -68,27 +87,79 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_single_lot, container, false);
-        Bundle args = getArguments();
 
         nameView = (TextView)rootView.findViewById(R.id.name);
-        nameView.setText(args.getString(Constant.SINGLE_NAME));
         milesView = (TextView)rootView.findViewById(R.id.miles);
-        milesView.setText(args.getString(Constant.SINGLE_MILE_STRING));
         ratingBarView = (RatingBar)rootView.findViewById(R.id.rating_bar);
         addressView = (TextView)rootView.findViewById(R.id.address);
-        addressView.setText(args.getString(Constant.SINGLE_ADDRESS));
         hoursView = (TextView)rootView.findViewById(R.id.hours);
-        hoursView.setText(args.getString(Constant.SINGLE_HOURS));
         callNumberView = (TextView)rootView.findViewById(R.id.call_number);
-        callNumberView.setText(args.getString(Constant.SINGLE_CALL_NUMBER));
         moreInfoView = (TextView)rootView.findViewById(R.id.more_info);
         moreInfoView.setText("More Info...");
+        cardView = (CardView)rootView.findViewById(R.id.card_view);
+
+        initView(getArguments());
 
         mapView = (MapView)rootView.findViewById(R.id.google_map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        mapView.setTransitionName(Constant.MAP_VIEW_TRANSITION);
+
 
         return rootView;
+    }
+
+    private void initView(Bundle args){
+        nameView.setText(args.getString(NAME));
+        milesView.setText(args.getString(MILE_STRING));
+
+        Log.d(TAG, "cur: " + args.getFloat(RATING));
+        ratingBarView.setStepSize(0.5f);
+        ratingBarView.setRating(args.getFloat(RATING));
+        Log.d(TAG, "after set view: " + ratingBarView.getRating());
+
+        addressView.setText(args.getString(ADDRESS));
+        hoursView.setText(args.getString(HOURS));
+        callNumberView.setText(args.getString(CALL_NUMBER));
+        int tmpPosition = args.getInt(POSITION);
+
+        if(tmpPosition != Constant.NOT_IN_LIST && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setTransitionName(tmpPosition);
+        }
+    }
+
+    @SuppressWarnings("NewApi")
+    public void setTransitionName(int position) {
+        nameView.setTransitionName("name" + position);
+        milesView.setTransitionName("miles" + position);
+        ratingBarView.setTransitionName("ratingbar" + position);
+        addressView.setTransitionName("address" + position);
+        cardView.setTransitionName("cardview"+position);
+    }
+
+    private void initGoogleMap() {
+        mGoogleMap.setMyLocationEnabled(true);
+        mGoogleMap.setIndoorEnabled(true);
+
+        Bundle args = getArguments();
+        double lat = args.getDouble(LAT);
+        double lng = args.getDouble(LNG );
+        String name = args.getString(NAME);
+        float zoomRatio = args.getFloat(ZOOM_RATIO);
+        LatLng latLng = new LatLng(lat, lng);
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoomRatio));
+
+        Marker marker = mGoogleMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(name)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.parking_marker)));
+        marker.showInfoWindow();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mGoogleMap = googleMap;
+        initGoogleMap();
     }
 
     @Override
@@ -98,46 +169,20 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mGoogleMap = googleMap;
-        mGoogleMap.setMyLocationEnabled(true);
-        mGoogleMap.setIndoorEnabled(true);
-
-        Bundle args = getArguments();
-        double lat = args.getDouble(Constant.SINGLE_LAT);
-        double lng = args.getDouble(Constant.SINGLE_LNG );
-        String name = args.getString(Constant.SINGLE_NAME);
-        float zoomRatio = args.getFloat(Constant.SINGLE_ZOOM_RATIO);
-        LatLng latLng = new LatLng(lat, lng);
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoomRatio));
-
-        Marker marker = mGoogleMap.addMarker(new MarkerOptions()
-                                            .position(latLng)
-                                            .title(name)
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.parking_marker)));
-        marker.showInfoWindow();
-    }
-
-    @Override
     public void onPause() {
-        mapView.onPause();
         super.onPause();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
+        mapView.onPause();
     }
 
     @Override
     public void onLowMemory() {
-        mapView.onLowMemory();
         super.onLowMemory();
+        mapView.onLowMemory();
     }
 
     @Override
     public void onDestroy() {
-        mapView.onDestroy();
         super.onDestroy();
+        mapView.onDestroy();
     }
 }

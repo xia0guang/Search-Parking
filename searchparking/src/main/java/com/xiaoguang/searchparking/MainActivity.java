@@ -7,12 +7,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.transition.TransitionInflater;
+import android.view.View;
 
+import com.xiaoguang.searchparking.component.Constant;
 import com.xiaoguang.searchparking.datalib.ParkingLotsData;
 import com.xiaoguang.searchparking.util.CmpUtil;
 import com.xiaoguang.searchparking.component.RestComponent;
 
-public class MainActivity extends AppCompatActivity implements MapFragment.MapfragmentListener {
+public class MainActivity extends AppCompatActivity implements MapFragment.MapFragmentListener, ParkingLotFragment.OnListFragmentListener{
 
     private FragmentManager fm;
     private RestComponent restComponent;
@@ -44,8 +46,8 @@ public class MainActivity extends AppCompatActivity implements MapFragment.Mapfr
     }
 
     @Override
-    public void onListButtonClicked(double lat, double lng) {
-        ParkingLotFragment parkingLotFragment = ParkingLotFragment.newInstance(lat, lng);
+    public void onListButtonClicked(double lat, double lng, float zoomRatio) {
+        ParkingLotFragment parkingLotFragment = ParkingLotFragment.newInstance(lat, lng, zoomRatio);
         fm.beginTransaction()
                 .setCustomAnimations(
                         R.animator.card_flip_right_in, R.animator.card_flip_right_out,
@@ -58,6 +60,15 @@ public class MainActivity extends AppCompatActivity implements MapFragment.Mapfr
 
     @Override
     public void onMarkerClicked(ParkingLotsData.ParkingLot parkingLot, float zoomRatio, String mileStr) {
+        openSingleLotFragment(null, parkingLot, Constant.NOT_IN_LIST, mileStr, zoomRatio);
+    }
+
+    @Override
+    public void onListItemClicked(View view, ParkingLotsData.ParkingLot parkingLot, int position, String mileStr, float zoomRatio) {
+        openSingleLotFragment(view, parkingLot, position, mileStr, zoomRatio);
+    }
+
+    private void openSingleLotFragment(View view, ParkingLotsData.ParkingLot parkingLot, int position, String mileStr, float zoomRatio) {
         if(parkingLot != null) {
             SingleLotFragment singleLotFragment = SingleLotFragment.newInstance(
                     parkingLot.name,
@@ -69,16 +80,49 @@ public class MainActivity extends AppCompatActivity implements MapFragment.Mapfr
                     "www.google.com",
                     parkingLot.lat,
                     parkingLot.lng,
-                    zoomRatio);
+                    zoomRatio,
+                    position);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                singleLotFragment.setEnterTransition(TransitionInflater.from(this).inflateTransition(android.R.transition.explode));
+                if(position == Constant.NOT_IN_LIST) {
+                    View mapView = findViewById(R.id.google_map);
+                    singleLotFragment.setSharedElementEnterTransition(TransitionInflater.from(this).inflateTransition(R.transition.trans_move));
+                    singleLotFragment.setEnterTransition(TransitionInflater.from(this).inflateTransition(android.R.transition.explode));
+                    fm.beginTransaction()
+                            .replace(R.id.main_container, singleLotFragment)
+                            .addToBackStack(null)
+                            .addSharedElement(mapView, mapView.getTransitionName())
+                            .commit();
+                } else {
+                    View nameView = view.findViewById(R.id.name);
+                    View milesView = view.findViewById(R.id.miles);
+                    View ratingView = view.findViewById(R.id.rating_bar);
+                    View addressView = view.findViewById(R.id.address);
+                    View cardView = view.findViewById(R.id.card_view);
+
+                    singleLotFragment.setSharedElementEnterTransition(TransitionInflater.from(this).inflateTransition(R.transition.trans_move));
+                    singleLotFragment.setEnterTransition(TransitionInflater.from(this).inflateTransition(android.R.transition.explode));
+
+
+                    fm.beginTransaction()
+                            .replace(R.id.main_container, singleLotFragment)
+                            .addToBackStack(null)
+                            .addSharedElement(nameView, nameView.getTransitionName())
+                            .addSharedElement(milesView, milesView.getTransitionName())
+                            .addSharedElement(ratingView, ratingView.getTransitionName())
+                            .addSharedElement(addressView, addressView.getTransitionName())
+                            .addSharedElement(cardView, cardView.getTransitionName())
+                            .commit();
+                }
+
+            } else {
+                fm.beginTransaction()
+                        .replace(R.id.main_container, singleLotFragment)
+                        .addToBackStack(null)
+                        .commit();
+
             }
 
-            FragmentTransaction ft = getFragmentManager().beginTransaction()
-                    .replace(R.id.main_container, singleLotFragment)
-                    .addToBackStack("transaction");
-            ft.commit();
 
         }
     }
@@ -87,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements MapFragment.Mapfr
     public void onBackPressed() {
         if(fm.getBackStackEntryCount() > 0) {
             fm.popBackStack();
+            fm.beginTransaction().commit();
         } else {
             super.onBackPressed();
         }

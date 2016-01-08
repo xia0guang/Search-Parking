@@ -9,14 +9,6 @@ public class Constant {
     public static final String CURRENT_PARKING_DATA_REQUEST = "CurrentParkingDataRequest";
     public static final String CURRENT_PARKING_DATA = "CurrentParkingData";
     public static final String ALL_PARKING_DATA_REQUEST = "AllParkingData";
-    public static final String SINGLE_NAME = "ParkingLotName";
-    public static final String SINGLE_RATING = "ParkingLotRating";
-    public static final String SINGLE_HOURS = "ParkingLotOpenHours";
-    public static final String SINGLE_CALL_NUMBER = "ParkingLotCallNumber";
-    public static final String SINGLE_URL = "ParkingLotYelpURL";
-    public static final String SINGLE_LAT = "ParkingLotSingleLat";
-    public static final String SINGLE_LNG = "ParkingLotSingleLng";
-    public static final String SINGLE_ZOOM_RATIO = "SingleZoomRatio";
-    public static final String SINGLE_ADDRESS = "ParkingLotAddress";
-    public static final String SINGLE_MILE_STRING = "ParkingLotMiles";
+    public static final int NOT_IN_LIST = -1;
+    public static final String MAP_VIEW_TRANSITION = "MapView";
 }
