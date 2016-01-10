@@ -53,10 +53,10 @@ public class MyParkingLotRecyclerViewAdapter extends RecyclerView.Adapter<MyPark
 
         holder.ratingBarView.setMax(5);
         float rating = (float)parkingLot.rating;
-        Log.d(TAG, "real: " + parkingLot.rating +", cur: " + rating);
+//        Log.d(TAG, "real: " + parkingLot.rating +", cur: " + rating);
         holder.ratingBarView.setStepSize(0.5f);
         holder.ratingBarView.setRating(rating);
-        Log.d(TAG, "after set view: " + holder.ratingBarView.getRating());
+//        Log.d(TAG, "after set view: " + holder.ratingBarView.getRating());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             holder.nameView.setTransitionName("name" + position);

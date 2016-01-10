@@ -108,11 +108,12 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
         directionToView = (FloatingActionButton)rootView.findViewById(R.id.direction_to);
         cardView = (CardView)rootView.findViewById(R.id.card_view);
 
-        initView(getArguments());
-
         mapView = (MapView)rootView.findViewById(R.id.google_map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
+        initView(getArguments());
+
 
 
         return rootView;
@@ -167,7 +168,7 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
             if(tmpPosition != Constant.NOT_IN_LIST) {
                 setTransitionName(tmpPosition);
             }
-            mapView.setTransitionName(Constant.MAP_VIEW_TRANSITION); 
+            mapView.setTransitionName(Constant.MAP_VIEW_TRANSITION);
         }
     }
 
