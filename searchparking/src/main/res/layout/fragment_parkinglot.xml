@@ -29,23 +29,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
                     android:id="@+id/name"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_weight="4"
                     android:id="@+id/miles"
                     android:gravity="end"/>
             </LinearLayout>
             <RatingBar
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="?android:attr/ratingBarStyleSmall"
                 android:isIndicator="true"
                 android:id="@+id/rating_bar"/>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/cardview_dark_background"
                 android:id="@+id/address" />
         </LinearLayout>
     </android.support.v7.widget.CardView>

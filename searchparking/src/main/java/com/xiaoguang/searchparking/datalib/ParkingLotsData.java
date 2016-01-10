@@ -1,5 +1,7 @@
 package com.xiaoguang.searchparking.datalib;
 
+import android.util.Log;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONArray;
@@ -16,12 +18,18 @@ import java.util.Map;
 public class ParkingLotsData {
 
     public static class ParkingLot{
+        private static final String TAG = "ParkingLotData";
         public final double lat;
         public final double lng;
         public final String name;
         public final JSONObject json;
         public final String address;
         public final double rating;
+        public final String url;
+        public final boolean isOpen;
+        public final String openStatus;
+        public final String displayPhone;
+        public final String phoneNumber;
 
         public ParkingLot(JSONObject json) throws JSONException {
             this.lat = json.getJSONObject("location").getJSONObject("coordinate").getDouble("latitude");
@@ -34,6 +42,21 @@ public class ParkingLotsData {
                 this.address = "";
             }
             this.rating = json.getDouble("rating");
+            this.url = json.getString("url");
+            this.isOpen = !json.getBoolean("is_closed");
+            this.openStatus = isOpen?"OPEN":"CLOSED";
+            String tmpPhone = "";
+            String tmpDisplayPhone = "";
+            try {
+                tmpPhone = json.getString("phone");
+                if(tmpPhone.length() == 10) {
+                    tmpDisplayPhone = "("+ tmpPhone.substring(0,3) + ") " + tmpPhone.substring(3,6) + "-" + tmpPhone.substring(6,10);
+                }
+            } catch (JSONException e) {
+                Log.d(TAG, "parsing phone error, no key called phone found");
+            }
+            this.phoneNumber = tmpPhone;
+            this.displayPhone = tmpDisplayPhone;
             this.json = json;
         }
 

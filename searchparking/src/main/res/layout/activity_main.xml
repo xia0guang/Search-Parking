@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true"
+    android:id="@+id/main_layout"
     tools:context="com.xiaoguang.searchparking.MainActivity">
 
     <android.support.design.widget.AppBarLayout
@@ -27,6 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
+        android:background="@color/main_background"
         android:id="@+id/main_container"/>
 
 </android.support.design.widget.CoordinatorLayout>

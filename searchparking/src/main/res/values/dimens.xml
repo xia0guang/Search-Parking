@@ -4,4 +4,9 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
+    <dimen name="rating_bar_height">25dp</dimen>
+    <dimen name="icon_size">25dp</dimen>
+    <dimen name="text_image_margin">3dp</dimen>
+    <dimen name="text_bottom_margin">8dp</dimen>
+    <dimen name="double_fab_margin">32dp</dimen>
 </resources>

@@ -2,10 +2,12 @@ package com.xiaoguang.searchparking;
 
 
 import android.app.Fragment;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.CardView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,12 +33,15 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     private static final String MILE_STRING = "MileString";
     private static final String RATING = "Rating";
     private static final String ADDRESS = "Address";
-    private static final String HOURS = "Hours";
-    private static final String CALL_NUMBER = "CallNumber";
+    private static final String IS_OPEN = "Hours";
+    private static final String DISPLAY_NUMBER = "CallNumber";
     private static final String URL = "URL";
     private static final String LAT = "Lat";
     private static final String LNG = "Lng";
     private static final String ZOOM_RATIO = "ZoomRatio";
+    private static final String OPEN = "OPEN NOW";
+    private static final String CLOSED = "CLOSED";
+    private static final String PHONE_NUMBER = "PhoneNumber";
     private TextView nameView;
     private RatingBar ratingBarView;
     private TextView hoursView;
@@ -47,13 +52,17 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     private TextView addressView;
     private TextView milesView;
     private CardView cardView;
+    private FloatingActionButton directionToView;
+    private double mLat;
+    private double mLng;
 
     public static SingleLotFragment newInstance(String name,
                                                 String mileStr,
                                                 float rating,
                                                 String address,
-                                                String hours,
-                                                String callNumber,
+                                                Boolean isOpen,
+                                                String displayPhoneNumber,
+                                                String phoneNumber,
                                                 String yelpUrl,
                                                 double lat,
                                                 double lng,
@@ -66,8 +75,9 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
         args.putString(MILE_STRING, mileStr);
         args.putFloat(RATING, rating);
         args.putString(ADDRESS, address);
-        args.putString(HOURS, hours);
-        args.putString(CALL_NUMBER, callNumber);
+        args.putBoolean(IS_OPEN, isOpen);
+        args.putString(DISPLAY_NUMBER, displayPhoneNumber);
+        args.putString(PHONE_NUMBER, phoneNumber);
         args.putString(URL, yelpUrl);
         args.putDouble(LAT, lat);
         args.putDouble(LNG, lng);
@@ -95,7 +105,7 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
         hoursView = (TextView)rootView.findViewById(R.id.hours);
         callNumberView = (TextView)rootView.findViewById(R.id.call_number);
         moreInfoView = (TextView)rootView.findViewById(R.id.more_info);
-        moreInfoView.setText("More Info...");
+        directionToView = (FloatingActionButton)rootView.findViewById(R.id.direction_to);
         cardView = (CardView)rootView.findViewById(R.id.card_view);
 
         initView(getArguments());
@@ -103,7 +113,6 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
         mapView = (MapView)rootView.findViewById(R.id.google_map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-        mapView.setTransitionName(Constant.MAP_VIEW_TRANSITION);
 
 
         return rootView;
@@ -112,19 +121,53 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     private void initView(Bundle args){
         nameView.setText(args.getString(NAME));
         milesView.setText(args.getString(MILE_STRING));
-
-        Log.d(TAG, "cur: " + args.getFloat(RATING));
+//        Log.d(TAG, "cur: " + args.getFloat(RATING));
         ratingBarView.setStepSize(0.5f);
         ratingBarView.setRating(args.getFloat(RATING));
-        Log.d(TAG, "after set view: " + ratingBarView.getRating());
-
+//        Log.d(TAG, "after set view: " + ratingBarView.getRating());
         addressView.setText(args.getString(ADDRESS));
-        hoursView.setText(args.getString(HOURS));
-        callNumberView.setText(args.getString(CALL_NUMBER));
+        boolean isOpen = args.getBoolean(IS_OPEN);
+        if(isOpen) {
+            hoursView.setText(OPEN);
+            hoursView.setTextColor(getActivity().getResources().getColor(R.color.GREEN));
+        } else {
+            hoursView.setText(CLOSED);
+            hoursView.setTextColor(getActivity().getResources().getColor(R.color.RED));
+        }
+        callNumberView.setText(args.getString(DISPLAY_NUMBER));
+        final String phoneNumber = args.getString(PHONE_NUMBER);
+        if (phoneNumber != null && phoneNumber.length() > 0) {
+            callNumberView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent callIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumber));
+                    startActivity(callIntent);
+                }
+            });
+        }
+        final String url = args.getString(URL);
+        moreInfoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent yelpIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(yelpIntent);
+            }
+        });
+        directionToView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent navigation = new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q="+mLat +"," + mLng));
+                startActivity(navigation);
+            }
+        });
+
         int tmpPosition = args.getInt(POSITION);
 
-        if(tmpPosition != Constant.NOT_IN_LIST && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setTransitionName(tmpPosition);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if(tmpPosition != Constant.NOT_IN_LIST) {
+                setTransitionName(tmpPosition);
+            }
+            mapView.setTransitionName(Constant.MAP_VIEW_TRANSITION); 
         }
     }
 
@@ -140,13 +183,14 @@ public class SingleLotFragment extends Fragment implements OnMapReadyCallback {
     private void initGoogleMap() {
         mGoogleMap.setMyLocationEnabled(true);
         mGoogleMap.setIndoorEnabled(true);
+        mGoogleMap.getUiSettings().setMapToolbarEnabled(false);
 
         Bundle args = getArguments();
-        double lat = args.getDouble(LAT);
-        double lng = args.getDouble(LNG );
+        mLat = args.getDouble(LAT);
+        mLng = args.getDouble(LNG );
         String name = args.getString(NAME);
         float zoomRatio = args.getFloat(ZOOM_RATIO);
-        LatLng latLng = new LatLng(lat, lng);
+        LatLng latLng = new LatLng(mLat, mLng);
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoomRatio));
 
         Marker marker = mGoogleMap.addMarker(new MarkerOptions()

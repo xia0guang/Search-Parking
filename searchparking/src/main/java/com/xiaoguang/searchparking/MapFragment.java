@@ -23,6 +23,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -50,6 +51,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private Location centerLocation;
     private Callback mParkingLotsCallback;
     private LatLng mCenterLatLng;
+    private LatLng mMyLatLng;
     private MapFragmentListener mListener;
     private boolean mResumeFromPrev;
     private float mZoomRatio;
@@ -87,7 +89,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
-        mMapView.setTransitionName(Constant.MAP_VIEW_TRANSITION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mMapView.setTransitionName(Constant.MAP_VIEW_TRANSITION);
+        }
 
         FloatingActionButton searchButton = (FloatingActionButton) rootView.findViewById(R.id.search_button);
         searchButton.setOnClickListener(new View.OnClickListener() {
@@ -107,7 +111,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onClick(View v) {
                 Location myLocation = mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
-                mListener.onListButtonClicked(myLocation.getLatitude(), myLocation.getLongitude(), mZoomRatio);
+                mMyLatLng = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                mListener.onListButtonClicked(mMyLatLng.latitude, mMyLatLng.longitude, mZoomRatio);
             }
         });
         return rootView;
@@ -147,13 +152,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         mGoogleMap.setOnCameraChangeListener(this);
         mGoogleMap.setOnMarkerClickListener(this);
 
-
         if(mResumeFromPrev || mCenterLatLng != null) {
             Dispatcher.instance().post(this, Constant.ALL_PARKING_DATA_REQUEST, new Cmd.BaseCmd());
         } else {
             centerLocation = mLocationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
             if(centerLocation != null) {
                 mCenterLatLng = new LatLng(centerLocation.getLatitude(), centerLocation.getLongitude());
+                mMyLatLng = mCenterLatLng;
             }
         }
         if(mCenterLatLng != null) {
@@ -169,7 +174,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             ParkingLotsData.ParkingLot parkingLot = mParkingLotsData
                                                     .getExistingParkingLots()
                                                     .get(ParkingLotsData.latLngToHashCode(tmpLat,tmpLng));
-            double miles = LocationUtil.distance(parkingLot.lat, mCenterLatLng.latitude, parkingLot.lng, mCenterLatLng.longitude, 0.0, 0.0)/1600;
+            double miles = LocationUtil.distance(parkingLot.lat, mMyLatLng.latitude, parkingLot.lng, mMyLatLng.longitude, 0.0, 0.0)/1600;
             String mileStr = String.format("%.1f miles", miles);
             mListener.onMarkerClicked(parkingLot, mZoomRatio, mileStr);
 

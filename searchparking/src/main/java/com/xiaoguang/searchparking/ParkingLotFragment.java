@@ -70,7 +70,7 @@ public class ParkingLotFragment extends Fragment{
         mapButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mActivity.getFragmentManager().popBackStack();
+                mActivity.onBackPressed();
             }
         });
 

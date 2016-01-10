@@ -1,9 +1,12 @@
 package com.xiaoguang.searchparking;
 
 import android.app.FragmentManager;
-import android.app.FragmentTransaction;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.transition.TransitionInflater;
@@ -18,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements MapFragment.MapFr
 
     private FragmentManager fm;
     private RestComponent restComponent;
+    private Toolbar mToolbar;
 
 
     @Override
@@ -26,8 +30,12 @@ public class MainActivity extends AppCompatActivity implements MapFragment.MapFr
         setContentView(R.layout.activity_main);
         CmpUtil.instance(getApplicationContext()).init();
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
+
+        if(!isNwConnected(this)) {
+            Snackbar.make(findViewById(R.id.main_layout), "Please try again when connect to network", Snackbar.LENGTH_LONG).show();
+        }
 
         MapFragment mapFragment = MapFragment.newInstance();
         fm = getFragmentManager();
@@ -55,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements MapFragment.MapFr
                 .addToBackStack(null)
                 .replace(R.id.main_container, parkingLotFragment, "ParkingLotFragment")
                 .commit();
+        setBackArrowVisible(true);
 
     }
 
@@ -75,9 +84,10 @@ public class MainActivity extends AppCompatActivity implements MapFragment.MapFr
                     mileStr,
                     (float)parkingLot.rating,
                     parkingLot.address,
-                    "Open: Mon-Sun, 00am-23pm",
-                    "555-555-5555",
-                    "www.google.com",
+                    parkingLot.isOpen,
+                    parkingLot.displayPhone,
+                    parkingLot.phoneNumber,
+                    parkingLot.url,
                     parkingLot.lat,
                     parkingLot.lng,
                     zoomRatio,
@@ -122,18 +132,48 @@ public class MainActivity extends AppCompatActivity implements MapFragment.MapFr
                         .commit();
 
             }
-
-
+            setBackArrowVisible(true);
         }
     }
 
     @Override
     public void onBackPressed() {
         if(fm.getBackStackEntryCount() > 0) {
+            if(fm.getBackStackEntryCount() == 1) {
+                setBackArrowVisible(false);
+            }
             fm.popBackStack();
-            fm.beginTransaction().commit();
         } else {
             super.onBackPressed();
         }
+    }
+
+    private void setBackArrowVisible(Boolean visible){
+        if(visible) {
+            mToolbar.setNavigationIcon(R.drawable.back_arrow);
+            mToolbar.setNavigationContentDescription("Back");
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onBackPressed();
+                }
+            });
+        } else {
+            mToolbar.setNavigationIcon(null);
+            mToolbar.setNavigationContentDescription("Home");
+        }
+    }
+
+    public static boolean isNwConnected(Context context) {
+        if (context == null) {
+            return true;
+        }
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo nwInfo = connectivityManager.getActiveNetworkInfo();
+        if (nwInfo != null && nwInfo.isConnectedOrConnecting()) {
+            return true;
+        }
+        return false;
     }
 }

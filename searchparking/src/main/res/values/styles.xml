@@ -15,4 +15,9 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="MyRatingBar" parent="@style/Widget.AppCompat.RatingBar">
+        <item name="android:minHeight">25dip</item>
+        <item name="android:maxHeight">25dip</item>
+    </style>
+
 </resources>
